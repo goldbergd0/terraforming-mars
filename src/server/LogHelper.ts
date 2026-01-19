@@ -6,7 +6,6 @@ import {Space} from './boards/Space';
 import {TileType, tileTypeToString} from '../common/TileType';
 import {IColony} from './colonies/IColony';
 import {Logger} from './logs/Logger';
-import {From, isFromPlayer} from './logs/From';
 import {CardResource} from '../common/CardResource';
 
 export class LogHelper {
@@ -42,12 +41,8 @@ export class LogHelper {
     // Skip solo play random tiles
     if (player.name === 'neutral') return;
 
-    const offset = Math.abs(space.y - 4);
-    const row = space.y + 1;
-    const position = space.x - offset + 1;
-
-    player.game.log('${0} ${1} ${2} on row ${3} position ${4}', (b) =>
-      b.player(player).string(action).string(description).number(row).number(position));
+    player.game.log('${0} ${1} ${2} at ${3}', (b) =>
+      b.player(player).string(action).string(description).space(space));
   }
 
   static logColonyTrackIncrease(player: IPlayer, colony: IColony, steps: number = 1) {
@@ -114,83 +109,6 @@ export class LogHelper {
 
   static logStealFromNeutralPlayer(player: IPlayer, resource: Resource, amount: number) {
     player.game.log('${0} stole ${1} ${2} from the neutral player', (b) => b.player(player).number(amount).string(resource));
-  }
-
-  static logUnitDelta(
-    player: IPlayer,
-    resource: Resource,
-    amount: number,
-    production: boolean,
-    from: From | undefined,
-    stealing = false,
-  ) {
-    if (amount === 0) {
-      // Logging zero units doesn't seem to happen
-      return;
-    }
-
-    // 1. Peter gained 5 MC
-    // 2. Peter gained 5 MC from Robotic Workforce
-    // 3. Peter gained 5 MC production
-    // 4. Peter gained 5 MC production beacuse of Robotic Workforce
-
-    // 5. Peter lost 5 MC
-    // 6. Peter lost 5 MC from Robotic Workforce
-    // 7. Peter lost 5 MC production
-    // 8. Peter lost 5 MC production beacuse of Robotic Workforce
-
-    // 9. Peter lost 1 MC production, stolen by Alan
-
-    const singular: Record<Resource, string> = {
-      [Resource.MEGACREDITS]: 'M€',
-      [Resource.STEEL]: 'steel',
-      [Resource.TITANIUM]: 'titanium',
-      [Resource.PLANTS]: 'plant',
-      [Resource.ENERGY]: 'energy',
-      [Resource.HEAT]: 'heat',
-    };
-
-    let resourceString = singular[resource];
-    if (resource === Resource.PLANTS && Math.abs(amount) > 1) {
-      resourceString = 'plants';
-    }
-    const modifier = amount > 0 ? 'gained' : 'lost';
-    let message = production ?
-      '${0} ' + modifier + ' ${1} ${2} production' :
-      '${0} ' + modifier + ' ${1} ${2}';
-      //  You   lost           1   plant production
-
-    if (from !== undefined) {
-      if (stealing === true) {
-        message = '${3} stole ${1} ${2} from ${0}';
-      } else {
-        message = message + ' because of ${3}';
-      }
-    }
-
-    player.game.log(message, (b) => {
-      b.player(player)
-        .number(Math.abs(amount))
-        .string(resourceString);
-
-      if (from !== undefined) {
-        if (isFromPlayer(from)) {
-          b.player(from.player);
-        } else if ('card' in from) {
-          if (typeof(from.card) === 'object') {
-            b.card(from.card);
-          } else {
-            b.cardName(from.card);
-          }
-        } else {
-          if (typeof(from.globalEvent) === 'object') {
-            b.globalEvent(from.globalEvent);
-          } else {
-            b.globalEventName(from.globalEvent);
-          }
-        }
-      }
-    });
   }
 
   public static logMoveResource(player: IPlayer, resource: CardResource, from: ICard, to: ICard) {

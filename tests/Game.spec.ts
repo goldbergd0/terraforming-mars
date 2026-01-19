@@ -520,7 +520,7 @@ describe('Game', () => {
     const player = TestPlayer.BLUE.newPlayer();
     const game = Game.newInstance('gto', [player], player);
     const card = new SaturnSystems();
-    player.corporations.push(card);
+    player.playedCards.push(card);
     expect(game.getCardPlayerOrThrow(card.name)).to.eq(player);
   });
 
@@ -1070,10 +1070,9 @@ describe('Game', () => {
   it('deserializing game sets expansions', () => {
     const player = TestPlayer.BLUE.newPlayer();
     const game = Game.newInstance('gameid', [player], player, {pathfindersExpansion: true});
-    (game.gameOptions.expansions as any) = undefined;
     const serialized = game.serialize();
 
-    expect(serialized.gameOptions.expansions).is.undefined;
+    expect(serialized.gameOptions.expansions.pathfinders).is.true;
 
     const game2 = Game.deserialize(serialized);
 
